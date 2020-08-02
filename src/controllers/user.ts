@@ -93,6 +93,7 @@ export const postSignup = async (req: Request, res: Response, next: NextFunction
         return res.redirect("/signup");
     }
 
+    //Mongo Model operation
     const user = new User({
         email: req.body.email,
         password: req.body.password

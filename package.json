@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf ./build && tsc",
-    "start:dev": "nodemon",
+    "migrate": "knex migrate:latest",
+    "start:dev": "npm run migrate && nodemon",
     "start": "npm run build && node build/index.js",
     "lint": "eslint . --ext .ts",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
@@ -70,8 +71,6 @@
     "ts-jest": "^24.1.0"
   },
   "dependencies": {
-    "errorhandler": "1.5.1",
-    "express": "4.17.1",
     "async": "^3.1.0",
     "bcrypt-nodejs": "^0.0.3",
     "bluebird": "^3.5.5",
@@ -79,18 +78,23 @@
     "compression": "^1.7.4",
     "connect-mongo": "^3.0.0",
     "dotenv": "^8.2.0",
+    "errorhandler": "1.5.1",
+    "express": "4.17.1",
     "express-flash": "0.0.2",
     "express-session": "^1.16.2",
     "express-validator": "^6.2.0",
     "fbgraph": "^1.4.4",
+    "knex": "0.21.2",
     "lodash": "^4.17.19",
     "lusca": "^1.6.1",
     "mongoose": "^5.7.5",
     "nodemailer": "^6.3.0",
+    "objection": "2.2.2",
     "passport": "^0.4.0",
     "passport-facebook": "^3.0.0",
     "passport-local": "^1.0.0",
     "pug": "^2.0.4",
+    "sqlite3": "5.0.0",
     "winston": "^3.2.1"
   }
 }

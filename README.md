@@ -19,7 +19,7 @@
 2. Authentication using passport(Local, FB)
 
 ## Future roadmap:
-1. Send email integration
+1. Send email integration(Malgun or sendgrid)
 2. Admin dashboard with reactjs and Tailwind css framework
 3. Login, Signup, Forgot Password, Third party Auth integartion
 4. Objection.js integration with multiple DB support
