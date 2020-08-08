@@ -1,12 +1,38 @@
-import { Model, Modifiers, Id } from 'objection';
+import { Model, Modifiers, Id, QueryBuilder, Page } from 'objection';
+import bcrypt from 'bcryptjs';
 import Plan from './Plan';
+import { any } from 'bluebird';
+// const { QueryBuilder } = require('objection');
+
+class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
+  // These are necessary. You can just copy-paste them and change the
+  // name of the query builder class.
+  ArrayQueryBuilderType!: MyQueryBuilder<M, M[]>;
+  SingleQueryBuilderType!: MyQueryBuilder<M, M>;
+  NumberQueryBuilderType!: MyQueryBuilder<M, number>;
+  PageQueryBuilderType!: MyQueryBuilder<M, Page<M>>;
+
+  findByEmail(email: string): this {
+    return this.where('email', email);
+  }
+
+  findOneByEmail(email: string): this {
+    return this.where('email', email);
+  }
+}
+
 
 export default class User extends Model {
   id!: number;
   firstName!: string;
   lastName!: string;
   password!: string;
-  plan?: Plan
+  username!: string;
+  email!: string;
+  plan?: Plan;
+
+  QueryBuilderType!: MyQueryBuilder<this>;
+  static QueryBuilder = MyQueryBuilder;
 
   // Table name is the only required property.
   static tableName = 'users';
@@ -23,4 +49,18 @@ export default class User extends Model {
       }
     },
   });
+
+  async $beforeInsert(queryContext: any) {
+    await super.$beforeInsert(queryContext);
+    return this.generateHash();
+  }
+
+  async generateHash() {
+    let salt = bcrypt.genSaltSync(10);
+    this.password = bcrypt.hashSync(this.password, salt);
+  }
+
+  comparePassword(password: string, hash: string) {
+    return bcrypt.compareSync(password, hash);
+  }
 }

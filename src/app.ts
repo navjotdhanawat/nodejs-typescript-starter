@@ -39,15 +39,15 @@ import * as passportConfig from "./config/passport";
 const app = express();
 
 // Connect to MongoDB
-const mongoUrl = MONGODB_URI;
-mongoose.Promise = bluebird;
+// const mongoUrl = MONGODB_URI;
+// mongoose.Promise = bluebird;
 
-mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
-    () => { /** ready to use. The `mongoose.connect()` promise resolves to undefined. */ },
-).catch(err => {
-    console.log(`MongoDB connection error. Please make sure MongoDB is running. ${err}`);
-    // process.exit();
-});
+// mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
+//     () => { /** ready to use. The `mongoose.connect()` promise resolves to undefined. */ },
+// ).catch(err => {
+//     console.log(`MongoDB connection error. Please make sure MongoDB is running. ${err}`);
+//     // process.exit();
+// });
 
 // Express configuration
 app.set("port", process.env.PORT || 3000);
@@ -59,10 +59,10 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     secret: SESSION_SECRET,
-    store: new MongoStore({
-        url: mongoUrl,
-        autoReconnect: true
-    })
+    // store: new MongoStore({
+    //     url: mongoUrl,
+    //     autoReconnect: true
+    // })
 }));
 
 app.use(passport.initialize());
@@ -94,15 +94,15 @@ app.use((req, res, next) => {
  * Primary app routes.
  */
 app.get("/", homeController.index);
-app.get("/login", userController.getLogin);
-app.post("/login", userController.postLogin);
+// app.get("/login", userController.getLogin);
+// app.post("/login", userController.postLogin);
 app.get("/logout", userController.logout);
 app.get("/forgot", userController.getForgot);
 app.post("/forgot", userController.postForgot);
 app.get("/reset/:token", userController.getReset);
 app.post("/reset/:token", userController.postReset);
 app.get("/signup", userController.getSignup);
-app.post("/signup", userController.postSignup);
+// app.post("/signup", userController.postSignup);
 app.get("/account", passportConfig.isAuthenticated, userController.getAccount);
 app.post("/account/profile", passportConfig.isAuthenticated, userController.postUpdateProfile);
 app.post("/account/password", passportConfig.isAuthenticated, userController.postUpdatePassword);
@@ -113,6 +113,10 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
  * API examples routes.
  */
 app.post("/user", apiController.createUser);
+app.get("/user", apiController.getAllUser);
+app.post("/plan", apiController.createPlan);
+app.post("/login", apiController.login);
+app.post("/signup", apiController.signup);
 
 
 export default app;

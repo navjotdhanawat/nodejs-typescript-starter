@@ -13,6 +13,8 @@ exports.up = (knex: any) => {
 
       table.string('firstName');
       table.string('lastName');
+      table.string('username');
+      table.string('email');
       table.string('password');
     })
     .createTable('plans', (table: any) => {
