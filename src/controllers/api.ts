@@ -113,6 +113,6 @@ export const signup = async (
 
 
 export const login = async (req: Request, res: Response) => {
-  const user = await User.query().findById(1)
+  const user = await User.query().findOneByEmail(req.body.email)
   res.send(user);
 };

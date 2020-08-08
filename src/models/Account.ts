@@ -1,4 +1,4 @@
-import { Model, Modifiers, Id, QueryBuilder, Page } from 'objection';
+import { Model, Modifiers, Id, QueryBuilder, Page, SingleQueryBuilder } from 'objection';
 import bcrypt from 'bcryptjs';
 import Plan from './Plan';
 import { any } from 'bluebird';
@@ -16,8 +16,8 @@ class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
     return this.where('email', email);
   }
 
-  findOneByEmail(email: string): this {
-    return this.where('email', email);
+  findOneByEmail(email: string): SingleQueryBuilder<any> {
+    return this.where('email', email).first()
   }
 }
 
