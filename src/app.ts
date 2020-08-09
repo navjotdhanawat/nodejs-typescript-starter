@@ -33,7 +33,7 @@ import * as contactController from "./controllers/contact";
 
 
 // API keys and Passport configuration
-import * as passportConfig from "./config/passport";
+import * as passportConfig from "./config/passport.common";
 
 // Create Express server
 const app = express();
@@ -75,20 +75,7 @@ app.use((req, res, next) => {
     res.locals.user = req.user;
     next();
 });
-app.use((req, res, next) => {
-    // After successful login, redirect back to the intended page
-    if (!req.user &&
-    req.path !== "/login" &&
-    req.path !== "/signup" &&
-    !req.path.match(/^\/auth/) &&
-    !req.path.match(/\./)) {
-        req.session.returnTo = req.path;
-    } else if (req.user &&
-    req.path == "/account") {
-        req.session.returnTo = req.path;
-    }
-    next();
-});
+
 
 /**
  * Primary app routes.
@@ -96,7 +83,7 @@ app.use((req, res, next) => {
 app.get("/", homeController.index);
 // app.get("/login", userController.getLogin);
 // app.post("/login", userController.postLogin);
-app.get("/logout", userController.logout);
+// app.get("/logout", userController.logout);
 app.get("/forgot", userController.getForgot);
 app.post("/forgot", userController.postForgot);
 app.get("/reset/:token", userController.getReset);
@@ -113,10 +100,13 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
  * API examples routes.
  */
 app.post("/user", apiController.createUser);
-app.get("/user", apiController.getAllUser);
+app.get("/user", passportConfig.isAuthenticated, apiController.getAllUser);
 app.post("/plan", apiController.createPlan);
+app.get("/plan", apiController.getAllPlans);
 app.post("/login", apiController.login);
 app.post("/signup", apiController.signup);
+app.get("/logout", apiController.logout);
+
 
 
 export default app;

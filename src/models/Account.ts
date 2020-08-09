@@ -1,35 +1,26 @@
-import { Model, Modifiers, Id, QueryBuilder, Page, SingleQueryBuilder } from 'objection';
+import { Model, QueryBuilder, SingleQueryBuilder, Page } from 'objection';
 import bcrypt from 'bcryptjs';
 import Plan from './Plan';
-import { any } from 'bluebird';
-// const { QueryBuilder } = require('objection');
 
 class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
-  // These are necessary. You can just copy-paste them and change the
-  // name of the query builder class.
   ArrayQueryBuilderType!: MyQueryBuilder<M, M[]>;
   SingleQueryBuilderType!: MyQueryBuilder<M, M>;
   NumberQueryBuilderType!: MyQueryBuilder<M, number>;
   PageQueryBuilderType!: MyQueryBuilder<M, Page<M>>;
 
-  findByEmail(email: string): this {
-    return this.where('email', email);
-  }
-
-  findOneByEmail(email: string): SingleQueryBuilder<any> {
-    return this.where('email', email).first()
+  findByEmailId(email: string): SingleQueryBuilder<this> {
+    return this.findOne({ email });
   }
 }
-
-
 export default class User extends Model {
   id!: number;
-  firstName!: string;
-  lastName!: string;
+  firstname!: string;
+  lastname!: string;
   password!: string;
   username!: string;
   email!: string;
   plan?: Plan;
+  tokens?: Array<string>;
 
   QueryBuilderType!: MyQueryBuilder<this>;
   static QueryBuilder = MyQueryBuilder;
@@ -46,7 +37,7 @@ export default class User extends Model {
       join: {
         to: 'users.planId',
         from: 'plans.id',
-      }
+      },
     },
   });
 
@@ -60,7 +51,12 @@ export default class User extends Model {
     this.password = bcrypt.hashSync(this.password, salt);
   }
 
-  comparePassword(password: string, hash: string) {
-    return bcrypt.compareSync(password, hash);
+  comparePassword(password: string, cb: any) {
+    return cb(null, bcrypt.compareSync(password, this.password));
+  }
+
+  static async findOne(arg: any, cb: any) {
+    let user = await this.query().findOne(arg);
+    cb(null, user)
   }
 }

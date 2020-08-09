@@ -1,25 +1,24 @@
 'use strict';
 
-import crypto from 'crypto';
-import { check, sanitize, validationResult } from 'express-validator';
 import { Response, Request, NextFunction } from 'express';
+import { IVerifyOptions } from "passport-local";
+import passport from "passport";
+
 import User from '../models/Account';
 import Plan from '../models/Plan';
 
 /**
  * List of API examples.
- * @route POST /user
+ * @route POST /plan
  */
 
 export const createPlan = async (req: Request, res: Response) => {
-  let {
-    name
-  } = req.body;
+  let { name } = req.body;
   const insertedGraph = await Plan.transaction(async trx => {
     const insertedGraph = await Plan.query(trx)
       // For security reasons, limit the relations that can be inserted.
       .insertGraph({
-        name
+        name,
       });
 
     return insertedGraph;
@@ -30,8 +29,8 @@ export const createPlan = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   let {
-    firstName,
-    lastName,
+    firstname,
+    lastname,
     password,
     plan: { id: planId },
   } = req.body;
@@ -39,8 +38,8 @@ export const createUser = async (req: Request, res: Response) => {
     const insertedGraph = await User.query(trx)
       // For security reasons, limit the relations that can be inserted.
       .insertGraph({
-        firstName,
-        lastName,
+        firstname,
+        lastname,
         password,
         plan: { '#dbRef': planId },
       });
@@ -57,6 +56,11 @@ export const getAllUser = async (req: Request, res: Response) => {
   res.send(users);
 };
 
+export const getAllPlans = async (req: Request, res: Response) => {
+  const plan = await Plan.query().myCustomMethod(1);
+  res.send(plan);
+};
+
 /**
  * Create a new local account.
  * @route POST /signup
@@ -66,53 +70,46 @@ export const signup = async (
   res: Response,
   next: NextFunction,
 ) => {
-  await check('email', 'Email is not valid')
-    .isEmail()
-    .run(req);
-  await check('password', 'Password must be at least 4 characters long')
-    .isLength({ min: 4 })
-    .run(req);
-  // await check('confirmPassword', 'Passwords do not match')
-  //   .equals(req.body.password)
-  //   .run(req);
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  await sanitize('email')
-    .normalizeEmail({ gmail_remove_dots: false })
-    .run(req);
-
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.send(errors);
-  }
-
   //DB operation to insert user data
   let {
-    firstName,
-    lastName,
+    firstname,
+    lastname,
     username,
     email,
     password,
     plan: { id: planId },
   } = req.body;
-  const insertedGraph = await User.transaction(async trx => {
-    const insertedGraph = await User.query(trx).insertGraph({
-      firstName,
-      lastName,
-      password,
-      username: username || email,
-      email,
-      plan: { '#dbRef': planId },
-    });
-
-    return insertedGraph;
+  const user = await User.query().insertGraph({
+    firstname,
+    lastname,
+    password,
+    username: username || email,
+    email,
+    plan: { '#dbRef': planId },
   });
 
-  res.send(insertedGraph);
+  res.send(user);
+};
+
+export const login = async (req: Request, res: Response , next: NextFunction) => {
+  passport.authenticate("local", (err: Error, user: User, info: IVerifyOptions) => {
+    if (err) { return next(err); }
+    if (!user) {
+        return res.send({msg: info.message});
+    }
+    req.logIn(user, (err) => {
+        if (err) { return next(err); }
+        res.send({ msg: "Success! You are logged in." });
+    });
+  })(req, res, next);
 };
 
 
-export const login = async (req: Request, res: Response) => {
-  const user = await User.query().findOneByEmail(req.body.email)
-  res.send(user);
+/**
+ * Log out.
+ * @route GET /logout
+ */
+export const logout = (req: Request, res: Response) => {
+  req.logout();
+  res.send(true);
 };

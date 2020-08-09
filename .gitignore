@@ -1,7 +1,7 @@
 # Optional npm cache directory
 .npm
 .DS_Store
-
+*.db
 # Dependency directories
 node_modules/
 jspm_packages/
