@@ -26,3 +26,12 @@
 5. Payment gateway integration.
 6. Unit Tests
 Thinking about more features...
+
+
+## APIs
+- POST /login
+- POST /signup
+- GET /logout
+- GET /plans
+- GET /plan
+- GET /users

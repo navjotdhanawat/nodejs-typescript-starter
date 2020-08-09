@@ -1,88 +1,65 @@
-import bcrypt from "bcrypt-nodejs";
-import crypto from "crypto";
-import mongoose from "mongoose";
+import { Model, QueryBuilder, SingleQueryBuilder, Page } from 'objection';
+import bcrypt from 'bcryptjs';
+import Plan from './Plan';
 
-export type UserDocument = mongoose.Document & {
-    email: string;
-    password: string;
-    passwordResetToken: string;
-    passwordResetExpires: Date;
+class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
+  ArrayQueryBuilderType!: MyQueryBuilder<M, M[]>;
+  SingleQueryBuilderType!: MyQueryBuilder<M, M>;
+  NumberQueryBuilderType!: MyQueryBuilder<M, number>;
+  PageQueryBuilderType!: MyQueryBuilder<M, Page<M>>;
 
-    facebook: string;
-    tokens: AuthToken[];
-
-    profile: {
-        name: string;
-        gender: string;
-        location: string;
-        website: string;
-        picture: string;
-    };
-
-    comparePassword: comparePasswordFunction;
-    gravatar: (size: number) => string;
-};
-
-type comparePasswordFunction = (candidatePassword: string, cb: (err: any, isMatch: any) => {}) => void;
-
-export interface AuthToken {
-    accessToken: string;
-    kind: string;
+  findByEmailId(email: string): SingleQueryBuilder<this> {
+    return this.findOne({ email });
+  }
 }
+export default class User extends Model {
+  id!: number;
+  firstname!: string;
+  lastname!: string;
+  password!: string;
+  username!: string;
+  email!: string;
+  plan?: Plan;
+  tokens?: Array<string>;
 
-const userSchema = new mongoose.Schema({
-    email: { type: String, unique: true },
-    password: String,
-    passwordResetToken: String,
-    passwordResetExpires: Date,
+  QueryBuilderType!: MyQueryBuilder<this>;
+  static QueryBuilder = MyQueryBuilder;
 
-    facebook: String,
-    twitter: String,
-    google: String,
-    tokens: Array,
+  // Table name is the only required property.
+  static tableName = 'users';
+  constructor() {
+    super()
 
-    profile: {
-        name: String,
-        gender: String,
-        location: String,
-        website: String,
-        picture: String
-    }
-}, { timestamps: true });
+  }
+  // This object defines the relations to other models. The relationMappings
+  // property can be a thunk to prevent circular dependencies.
+  static relationMappings = () => ({
+    plan: {
+      relation: Model.BelongsToOneRelation,
+      modelClass: Plan,
+      join: {
+        to: 'users.planId',
+        from: 'plans.id',
+      },
+    },
+  });
 
-/**
- * Password hash middleware.
- */
-userSchema.pre("save", function save(next) {
-    const user = this as UserDocument;
-    if (!user.isModified("password")) { return next(); }
-    bcrypt.genSalt(10, (err, salt) => {
-        if (err) { return next(err); }
-        bcrypt.hash(user.password, salt, undefined, (err: mongoose.Error, hash) => {
-            if (err) { return next(err); }
-            user.password = hash;
-            next();
-        });
-    });
-});
+  async $beforeInsert(queryContext: any) {
+    await super.$beforeInsert(queryContext);
+    return this.generateHash();
+  }
 
-const comparePassword: comparePasswordFunction = function (candidatePassword, cb) {
-    bcrypt.compare(candidatePassword, this.password, (err: mongoose.Error, isMatch: boolean) => {
-        cb(err, isMatch);
-    });
-};
+  async generateHash() {
+    let salt = bcrypt.genSaltSync(10);
+    this.password = bcrypt.hashSync(this.password, salt);
+  }
 
-userSchema.methods.comparePassword = comparePassword;
+  comparePassword(password: string, cb: any) {
+    return cb(null, bcrypt.compareSync(password, this.password));
+  }
 
-/**
- * Helper method for getting user's gravatar.
- */
-userSchema.methods.gravatar = function (size: number = 200) {
-    if (!this.email) {
-        return `https://gravatar.com/avatar/?s=${size}&d=retro`;
-    }
-    const md5 = crypto.createHash("md5").update(this.email).digest("hex");
-    return `https://gravatar.com/avatar/${md5}?s=${size}&d=retro`;
-};
-
-export const User = mongoose.model<UserDocument>("User", userSchema);
+  static async findOne(arg: any, cb: any) {
+    let user = await this.query().findOne(arg);
+    cb(null, user)
+  }
+}

@@ -1,5 +1,4 @@
 import { Model, SingleQueryBuilder, QueryBuilder, Page } from 'objection'
-import User from './Account'
 
 class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
   // These are necessary. You can just copy-paste them and change the

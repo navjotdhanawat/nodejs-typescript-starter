@@ -2,9 +2,8 @@ import passport from "passport";
 import passportLocal from "passport-local";
 import _ from "lodash";
 
-import User from "../models/Account";
+import User from "../models/User";
 import { Request, Response, NextFunction } from "express";
-
 const LocalStrategy = passportLocal.Strategy;
 
 passport.serializeUser<any, any>((user, done) => {
