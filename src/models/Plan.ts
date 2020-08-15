@@ -1,4 +1,4 @@
-import { Model, SingleQueryBuilder, QueryBuilder, Page } from 'objection'
+import { Model, SingleQueryBuilder, QueryBuilder, Page, Id } from 'objection'
 
 class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
   // These are necessary. You can just copy-paste them and change the
@@ -8,15 +8,18 @@ class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
   NumberQueryBuilderType!: MyQueryBuilder<M, number>;
   PageQueryBuilderType!: MyQueryBuilder<M, Page<M>>;
 
-  myCustomMethod(id: number): SingleQueryBuilder<this> {
-    return this.findById(id);
+  findByPlanCode(code: string): SingleQueryBuilder<this> {
+    return this.findOne({ code });
   }
 }
+
 export default class Plan extends Model {
   QueryBuilderType!: MyQueryBuilder<this>;
   static QueryBuilder = MyQueryBuilder;
-  id!: number
-  name?: string
+  id!: Id
+  code?: string
+  price?: number
+  name!: string
 
   // Table name is the only required property.
   static tableName = 'plans'

@@ -1,71 +1,71 @@
-import express from "express";
-import compression from "compression";  // compresses requests
-import session from "express-session";
-import bodyParser from "body-parser";
-import lusca from "lusca";
-import flash from "express-flash";
-import path from "path";
-import passport from "passport";
-import bluebird from "bluebird";
-import { MONGODB_URI, SESSION_SECRET } from "./util/secrets";
+import express from 'express';
+import compression from 'compression'; // compresses requests
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import lusca from 'lusca';
+import flash from 'express-flash';
+import passport from 'passport';
+import errorHandler from 'errorhandler';
 
-import Knex from 'knex'
-import knexConfig from '../knexfile'
-import { Model, ForeignKeyViolationError, ValidationError } from 'objection'
-
-// Initialize knex.
-const knex = Knex(knexConfig.development)
-
-// Bind all Models to a knex instance. If you only have one database in
-// your server this is all you have to do. For multi database systems, see
-// the Model.bindKnex() method.
-Model.knex(knex)
+import Knex from 'knex';
+import knexConfig from '../knexfile';
+import { Model, ForeignKeyViolationError, ValidationError } from 'objection';
+// import "./config/passport.config";
 
 // Controllers (route handlers)
-import * as userController from "./controllers/user";
-
-
+import {UserController} from './controllers/user';
+import {AuthController} from './controllers/auth';
+import {HomeController} from './controllers/home';
 // API keys and Passport configuration
-import * as passportConfig from "./config/passport.common";
 
-// Create Express server
-const app = express();
+export class Server {
+  public app: express.Application;
+  public userController: UserController = new UserController();
+  public homeController: HomeController = new HomeController();
+  public authController: AuthController = new AuthController();
 
-// Express configuration
-app.set("port", process.env.PORT || 3000);
+  constructor(port: string) {
+    this.app = express();
+    this.app.set('port', port);
+    this.initDB();
+    this.config();
+    this.routes();
+  }
 
-app.use(compression());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({
-    resave: true,
-    saveUninitialized: true,
-    secret: SESSION_SECRET
-}));
+  public config(): void {
+    // this.app.use(passport.initialize());
+    // this.app.use(passport.session());
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: false }));
+    this.app.use(compression());
+    this.app.use(lusca.xframe('SAMEORIGIN'));
+    this.app.use(lusca.xssProtection(true));
+    this.app.use(errorHandler())
+    this.app.use(cors());
+  }
 
-app.use(passport.initialize());
-app.use(passport.session());
+  public initDB(): void {
+    // Initialize knex.
+    const knex = Knex(knexConfig.development);
+    Model.knex(knex);
+  }
 
-app.use(flash());
-app.use(lusca.xframe("SAMEORIGIN"));
-app.use(lusca.xssProtection(true));
-app.use((req, res, next) => {
-    res.locals.user = req.user;
-    next();
-});
+  public routes(): void {
+    this.app.post('/user', this.authController.authenticateJWT, this.homeController.createUser);
+    this.app.get('/user', this.authController.authenticateJWT, this.homeController.getAllUser);
+    this.app.post('/plan', this.authController.authenticateJWT, this.homeController.createPlan);
+    this.app.get('/plan', this.authController.authenticateJWT, this.homeController.getAllPlans);
+    this.app.post('/login', this.userController.login);
+    this.app.post('/signup', this.userController.signup);
+    this.app.get('/logout', this.userController.logout);
+  }
 
-
-/**
- * Primary app routes.
- */
-app.post("/user", userController.createUser);
-app.get("/user", passportConfig.isAuthenticated, userController.getAllUser);
-app.post("/plan", userController.createPlan);
-app.get("/plan", userController.getAllPlans);
-app.post("/login", userController.login);
-app.post("/signup", userController.signup);
-app.get("/logout", userController.logout);
-
-
-
-export default app;
+  public start(): void {
+    this.app.listen(this.app.get('port'), () => {
+      console.log(
+        '  API is running at http://localhost:%d',
+        this.app.get('port'),
+      );
+    });
+  }
+}

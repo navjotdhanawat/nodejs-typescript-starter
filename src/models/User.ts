@@ -1,4 +1,4 @@
-import { Model, QueryBuilder, SingleQueryBuilder, Page } from 'objection';
+import { Model, QueryBuilder, SingleQueryBuilder, Page, Id } from 'objection';
 import bcrypt from 'bcryptjs';
 import Plan from './Plan';
 
@@ -12,12 +12,11 @@ class MyQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<M, R> {
     return this.findOne({ email });
   }
 }
-export default class User extends Model {
-  id!: number;
+export class User extends Model {
+  id!: Id;
   firstname!: string;
   lastname!: string;
   password!: string;
-  username!: string;
   email!: string;
   plan?: Plan;
   tokens?: Array<string>;
@@ -59,7 +58,11 @@ export default class User extends Model {
   }
 
   static async findOne(arg: any, cb: any) {
-    let user = await this.query().findOne(arg);
-    cb(null, user)
+    try {
+      let user = await this.query().findOne(arg);
+      cb(null, user)
+    } catch(err) {
+      cb(err)
+    }
   }
 }
